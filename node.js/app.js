@@ -1,6 +1,8 @@
 'use strict';
 
 var express = require('express');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);
 var timeout = require('connect-timeout');
 var path = require('path');
 var cookieParser = require('cookie-parser');
@@ -16,6 +18,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+// 设置静态文件路径
 app.use(express.static('public'));
 
 // 设置默认超时时间
@@ -32,12 +35,24 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+app.use(session({
+	name: 'sessionId',
+	secret: 'chyingp', // 用来对session id相关的cookie进行签名
+	store: new FileStore(), // 本地存储session（文本文件，也可以选择其他store，比如redis的）
+	saveUninitialized: false, // 是否自动保存未初始化的会话，建议false
+	resave: false, // 是否每次都重新保存会话，建议false
+	cookie: {
+		maxAge: 10 * 1000 // 有效期，单位是毫秒
+	}
+}));
+
 app.get('/', function(req, res) {
   res.render('index', { currentTime: new Date() });
 });
 
 // 可以将一类的路由单独保存在一个文件中
 app.use('/todos', require('./routes/todos'));
+app.use('/register', require('./routes/register'));
 
 app.use(function(req, res, next) {
   // 如果任何一个路由都没有返回响应，则抛出一个 404 异常给后续的异常处理器
