@@ -4,31 +4,13 @@ var AV = require('leanengine');
 var https = require('https');
 var url = require('url');
 
-//var Todo = AV.Object.extend('Todo');
-
 router.get('/', function(req, res, next) {
-/*
-  var query = new AV.Query(Todo);
-  query.descending('createdAt');
-  query.find().then(function(results) {
-    res.render('todos', {
-      title: 'TODO 列表',
-      todos: results
-    });
-  }, function(err) {
-    if (err.code === 101) {
-      // 该错误的信息为：{ code: 101, message: 'Class or object doesn\'t exists.' }，说明 Todo 数据表还未创建，所以返回空的 Todo 列表。
-      // 具体的错误代码详见：https://leancloud.cn/docs/error_code.html
-      res.render('todos', {
-        title: 'TODO 列表',
-        todos: []
-      });
-    } else {
-      next(err);
-    }
-  }).catch(next);
- */
-    res.render('register');
+	var userId = req.session.userId;
+	var isLogined = !!userId;
+	if (!isLogined)
+		res.render('register');
+	else
+		res.redirect('/');
 });
 
 router.post('/requestSmsCode', function(req, res, next) {
@@ -54,9 +36,9 @@ router.post('/verifySmsCode', function(req, res, next) {
 	var mobilePhone = req.body.mobilePhone || '';
 	var smsCode = req.body.smsCode || '';
 	if (mobilePhone.length != 11) {
-		res.send({ code: -1, message: '无效的手机号码。' });
+		res.send({ status: 'error', code: -1, message: '无效的手机号码。' });
 	} if (smsCode.length <= 0) {
-		res.send({ code: -3, message: '请填写验证码。' });
+		res.send({ status: 'error', code: -3, message: '请填写验证码。' });
 	} else {		
 		var postOption = url.parse("https://pineadww.api.lncld.net/1.1/usersByMobilePhone");
 		postOption.port = 443;
@@ -77,10 +59,30 @@ router.post('/verifySmsCode', function(req, res, next) {
 							console.error(err);
 							res.send({ status: 'error', code: 0, message: '会话失败' });
 						} else {
-							req.session.loginUser = mobilePhone;
-							resObj.status = 'success';
-							resObj.code = 0;
-							res.send(resObj);
+							req.session.userId = resObj.objectId;
+							req.session.mobilePhone = mobilePhone;	
+							var user = AV.Object.createWithoutData('_User', resObj.objectId);
+							user.fetch().then(function(user) {
+								req.session.username = user.get('username');
+								var extraInfo = user.get('extraInfo');
+								if (!extraInfo) {
+									var UserExtra = AV.Object.extend('UserExtra');
+									var extra = new UserExtra();
+									extra.set('name', '');
+									extra.set('birthday', new Date('1901-01-01'));
+									extra.set('gender', 0);
+									extra.set('schoolName', '');							
+									extra.save().then(function(extra) {
+										user.set('extraInfo', extra);
+										user.save();
+									});
+								}
+								res.send({ status: 'success', code: 0, message: '验证成功' });
+							}, function(err) {
+								console.log("H5");
+								console.error(err);
+								res.send({ status: 'success', code: 0, message: '验证成功' });
+							});
 						}
 					});
 				} else {
@@ -99,26 +101,56 @@ router.post('/verifySmsCode', function(req, res, next) {
 	}
 });
 
-router.get('/logout', function(req, res, next) {
-	req.session.destroy(function(err) {
-		if (err) {
-			res.json({ code: -2, message: '注销失败' });
-		} else {
-			res.clearCookie('sessionId');
-			res.redirect('/register');
-		}
-	});
+router.all('/*', function(req, res, next) {
+	var userId = req.session.userId;
+	var isLogined = !!userId;
+	if (isLogined)
+		next();
+	else
+		res.redirect('/register');
 });
 
 router.get('/username', function(req, res, next) {
-	var loginUser = req.session.loginUser;
-	var isLogined = !!loginUser;
-	console.log(loginUser);
-	console.log(isLogined);
-	if (isLogined)
-		res.render('username');
-	else
-		res.redirect('/register');
+	var query = new AV.Query('_User');
+	query.get(req.session.userId).then(function(user) {
+		var username = user.get('username');
+		var mobilePhone = user.get('mobilePhoneNumber');
+		if (!username || username == mobilePhone) {
+			res.render('username');
+		} else {
+			res.redirect('/');
+		}
+	}, function(err) {
+		req.redirect('/');
+	});
+});
+
+router.post('/username', function(req, res, next) {
+	var username = req.body.username || '';
+	var password = req.body.password || '';
+	//注意：这里还要判断用户名是否符合格式要求，例如必须以字母开头。
+	if (username.length <= 0) {
+		res.send({ status: 'error', code: -1, message: '用户名不能为空。' });
+	} if (password.length <= 0) {
+		res.send({ status: 'error', code: -3, message: '密码不能为空。' });
+	} else {
+		var user = AV.Object.createWithoutData('_User', req.session.userId);
+		user.fetch().then(function() {
+			user.set('username', username);
+			user.set('password', password);
+			user.save().then(function(ret) {
+				res.send({ status: 'success', code: 0, message: '提交完成。' });
+			}, function(err) {
+				console.log('c4');
+				console.log(err);
+				res.send({ status: 'fail', code: -5, message: '提交失败。' });
+			});
+		}, function(err) {
+			console.error('c2');
+			console.error(err);
+			res.send({ status: 'fail', code: -5, message: '没有找到用户。' });
+		});
+	}
 });
 
 module.exports = router;

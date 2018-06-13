@@ -6,13 +6,22 @@
         <script src="http://cdn1.lncld.net/static/js/2.3.2/av-min.js"></script>
         <script src="/js/jquery-1.9.1.min.js"></script>
 		<script src="/js/leancloud.js"></script>
+	    <script src="/js/username.js"></script>
     </head>
     <body>
         <div>
-		    <span>Hello</span>
+		    <span>用户名：</span>
+			<input type="text" id="edtUsername" />
 		</div>
         <div>
-			<a href="logout">注销</a>
+		    <span>密  码：</span>
+			<input type="password" id="edtPassword" />
+		</div>
+		<div>
+			<input type="button" id="btnSubmit" value="提交" />
+		</div>
+        <div>
+			<a href="/logout">注销</a>
 		</div>
     </body>
 </html>

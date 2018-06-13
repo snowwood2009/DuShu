@@ -41,13 +41,45 @@ app.use(session({
 	store: new FileStore(), // 本地存储session（文本文件，也可以选择其他store，比如redis的）
 	saveUninitialized: false, // 是否自动保存未初始化的会话，建议false
 	resave: false, // 是否每次都重新保存会话，建议false
-	cookie: {
-		maxAge: 10 * 1000 // 有效期，单位是毫秒
-	}
+	//cookie: {
+	//	maxAge: 10 * 1000 // 有效期，单位是毫秒
+	//}
 }));
 
 app.get('/', function(req, res) {
-  res.render('index', { currentTime: new Date() });
+	var userId = req.session.userId;
+	if (!!userId) {
+		var username = req.session.username || req.session.mobilePhone || '';
+		res.render('index',
+			{
+				currentTime: new Date(),
+				username: username,
+				actionUrl: '/logout',
+				actionName: '注销'
+			}
+		);
+	} else {
+		res.render('index',
+			{
+				currentTime: new Date(),
+				username: '',
+				actionUrl: '/register',
+				actionName: '登录'
+			}
+		);
+
+	}
+});
+
+app.get('/logout', function(req, res) {
+	req.session.destroy(function(err) {
+		if (err) {
+			res.json({ code: -2, message: '注销失败' });
+		} else {
+			res.clearCookie('sessionId');
+			res.redirect('/');
+		}
+	});
 });
 
 // 可以将一类的路由单独保存在一个文件中
