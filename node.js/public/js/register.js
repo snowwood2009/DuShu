@@ -1,65 +1,82 @@
-$(document).ready(function() {
-	AV.Captcha.request({ width:85, height:30 }).then(function(captcha) {
-		captcha.bind(
-			{
-				textInput:    'captchaCode',     // the id for textInput
-				image:        'captchaImage',    // the id for image element
-				verifyButton: 'requestSmsCode',  // the id for verify button
-			},
-			{
-				success: function(validateCode)
-				{
-					var mobilePhone = $("#mobilePhone").val();
-					if (mobilePhone.length != 11) {
-						alert("请填写正确的手机号。");
-					} else {
-						$.ajax({
-							type: "POST",
-							url: "register/requestSmsCode",
-							data: {	mobilePhone: mobilePhone },
-							success: function(res) {
-								alert(res.message);
-							},
-							error: function(err) {
-								alert("获取验证码失败。\n" + err.statusText);
-							}
-						});
-					}
-				},
-				error: function(err)
-				{
-					if ($("#captchaCode").val().length <= 0)
-						alert("请填写校验码。");
-					else
-						alert(err.message);
-				}
+function requestCaptchaCode() {
+	$.ajax({
+		type: "GET",
+		url: "register/requestCaptchaCode",
+		success: function(res) {
+			if ('success' == res.status) {
+				$("#captchaImage").attr("src", res.captcha_url);
+				$("#captchaToken").attr("value", res.captcha_token);
+			} else {
+				alert(res.message);
 			}
-		);
-	});
-	
-	$("#verifySmsCode").click(function() {
-		var mobilePhone = $("#mobilePhone").val();
-		var smsCode = $("#smsCode").val();
-		if (mobilePhone.length != 11) {
-			alert("请填写正确的手机号。");
-		} else if (smsCode.length <= 0) {
-			alert("请填写验证码。");
-		} else {
-			$.ajax({
-				type: "POST",
-				url: "register/verifySmsCode",
-				data: {	mobilePhone: mobilePhone, smsCode: smsCode },
-				success: function(res) {
-					if (res.status == 'success') {
-						$(location).attr('href', 'register/username');
-					} else {
-						alert(res.message);
-					}
-				},
-				error: function(err) {
-					alert("注册失败。\n" + err.statusText);
-				}
-			});
+		},
+		error: function(err) {
+			alert("校验码获取失败。\n" + err.statusText);
 		}
 	});
+}
+
+function verifyCaptchaCode() {
+	var captchaCode = $("#captchaCode").val();
+	if (captchaCode.length <= 0) {
+		alert("请填写校验码！")
+		return;
+	}
+	var mobilePhone = $("#mobilePhone").val();
+	if (mobilePhone.length != 11) {
+		alert("请填写正确的手机号码！")
+		return;
+	}
+	var captchaToken = $("#captchaToken").val();
+	$.ajax({
+		type: "POST",
+		url: "register/verifyCaptchaCode",
+		data: {
+			captchaCode: captchaCode,
+			captchaToken: captchaToken,
+			mobilePhone: mobilePhone
+		},
+		success: function(res) {
+			if ('success' == res.status) {
+			} else {
+				alert(res.message);
+			}
+		},
+		error: function(err) {
+			alert("校验码验证失败。\n" + err.statusText);
+		}
+	});
+}
+
+function verifySmsCode() {
+	var mobilePhone = $("#mobilePhone").val();
+	var smsCode = $("#smsCode").val();
+	if (mobilePhone.length != 11) {
+		alert("请填写正确的手机号。");
+	} else if (smsCode.length <= 0) {
+		alert("请填写验证码。");
+	} else {
+		$.ajax({
+			type: "POST",
+			url: "register/verifySmsCode",
+			data: {	mobilePhone: mobilePhone, smsCode: smsCode },
+			success: function(res) {
+				if (res.status == 'success') {
+					$(location).attr('href', 'register/username');
+				} else {
+					alert(res.message);
+				}
+			},
+			error: function(err) {
+				alert("注册失败。\n" + err.statusText);
+			}
+		});
+	}
+}
+
+$(document).ready(function() {
+	$("#captchaImage").click(requestCaptchaCode);
+	$("#requestSmsCode").click(verifyCaptchaCode);
+	$("#verifySmsCode").click(verifySmsCode);
+	requestCaptchaCode();
 });

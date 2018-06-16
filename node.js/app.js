@@ -50,24 +50,21 @@ app.get('/', function(req, res) {
 	var userId = req.session.userId;
 	if (!!userId) {
 		var username = req.session.username || req.session.mobilePhone || '';
-		res.render('index',
-			{
+		res.render('index',	{
 				currentTime: new Date(),
+				userId: req.session.userId,
 				username: username,
 				actionUrl: '/logout',
 				actionName: '注销'
-			}
-		);
+		});
 	} else {
-		res.render('index',
-			{
+		res.render('index',	{
 				currentTime: new Date(),
+				userId: '',
 				username: '',
-				actionUrl: '/register',
+				actionUrl: '/login',
 				actionName: '登录'
-			}
-		);
-
+		});
 	}
 });
 
@@ -83,8 +80,9 @@ app.get('/logout', function(req, res) {
 });
 
 // 可以将一类的路由单独保存在一个文件中
-app.use('/todos', require('./routes/todos'));
+app.use('/login', require('./routes/login'));
 app.use('/register', require('./routes/register'));
+app.use('/personalCenter', require('./routes/personalCenter'));
 
 app.use(function(req, res, next) {
   // 如果任何一个路由都没有返回响应，则抛出一个 404 异常给后续的异常处理器

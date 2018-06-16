@@ -13,6 +13,86 @@ router.get('/', function(req, res, next) {
 		res.redirect('/');
 });
 
+router.get('/requestCaptchaCode', function(req, res, next) {
+	var getOption = url.parse("https://api.leancloud.cn/1.1/requestCaptcha?width=85&height=30");
+	getOption.port = 443;
+	getOption.method = 'GET';
+	getOption.headers = {
+		'X-LC-Id': process.env.LEANCLOUD_APP_ID,
+		'X-LC-Key': process.env.LEANCLOUD_APP_KEY
+	};
+	var getReq = https.request(getOption, function(getRes) {
+		getRes.on('data', function(data) {
+			var resObj = JSON.parse(data.toString());
+			var captcha_token = !!resObj.captcha_token;
+			var captcha_url = !!resObj.captcha_url;
+			if (captcha_token && captcha_url)
+				res.send({ status: 'success', captcha_token: resObj.captcha_token, captcha_url: resObj.captcha_url });
+			else
+				res.send({ status: 'fail', message: '校验码获取失败' });
+		});
+		getReq.on('error', function(err) {
+			console.log("A6");
+			console.error(err);
+		});
+	});
+	getReq.end();
+});
+
+router.post('/verifyCaptchaCode', function(req, res, next) {
+	var captchaCode = req.body.captchaCode || '';
+	var captchaToken = req.body.captchaToken || '';
+	var mobilePhone = req.body.mobilePhone || '';
+	if (mobilePhone.length != 11) {
+		res.send({ status: 'error', message: '无效的手机号码。' });
+	} if (mobilePhone.length <= 0) {
+		res.send({ status: 'error', message: '请填写验证码。' });
+	} else {
+		var postOption = url.parse("https://api.leancloud.cn/1.1/verifyCaptcha");
+		postOption.port = 443;
+		postOption.method = 'POST';
+		postOption.headers = {
+			'content-type': 'application/json;charset=utf-8',
+			'X-LC-Id': process.env.LEANCLOUD_APP_ID,
+			'X-LC-Key': process.env.LEANCLOUD_APP_KEY
+		};
+    var postReq = https.request(postOption, function(postRes) {
+    	postRes.on('data', function(data) {
+				var resObj = JSON.parse(data.toString());
+				var validateToken = resObj.validate_token || '';
+				if (validateToken.length <= 0) {
+					if (resObj.error.length > 0)
+						res.send({ status: 'fail', message: resObj.error });
+					else
+						res.send({ status: 'fail', message: '校验码错误。' });
+					return;
+				}
+
+				AV.Cloud.requestSmsCode({
+					mobilePhoneNumber: mobilePhone,
+					name: '小石头',
+					op: '注册',
+					ttl: 10
+				}).then(function() {
+					res.send({ status: 'success', message: '验证码已发送。' });
+				}, function(err) {
+					res.send({ status: 'error', message: '[' + err.code + '] ' + err.rawMessage });
+				});
+
+			});
+		});
+		postReq.on('error', function(err) {
+			res.send({ status: 'fail', message: '通讯失败' });
+		});
+
+		postReq.write(JSON.stringify({
+			captcha_code: captchaCode,
+			captcha_token: captchaToken
+		}));
+		postReq.end();
+	}
+});
+
 router.post('/requestSmsCode', function(req, res, next) {
 	var mobilePhone = req.body.mobilePhone || '';
 	if (mobilePhone.length != 11) {
@@ -24,7 +104,6 @@ router.post('/requestSmsCode', function(req, res, next) {
 			op: '注册',
 			ttl: 10
 		}).then(function() {
-			console.log('a2');
 			res.send({ status: 'success', code: 0, message: '验证码已发送。' });
 		}, function(err) {
 			res.send({ status: 'error', code: -2, message: '[' + err.code + '] ' + err.rawMessage });
@@ -39,18 +118,18 @@ router.post('/verifySmsCode', function(req, res, next) {
 		res.send({ status: 'error', code: -1, message: '无效的手机号码。' });
 	} if (smsCode.length <= 0) {
 		res.send({ status: 'error', code: -3, message: '请填写验证码。' });
-	} else {		
+	} else {
 		var postOption = url.parse("https://pineadww.api.lncld.net/1.1/usersByMobilePhone");
 		postOption.port = 443;
 		postOption.method = 'POST';
 		postOption.headers = {
-            'Content-Type' : 'application/json',  
+            'Content-Type' : 'application/json',
 			'X-LC-Id': process.env.LEANCLOUD_APP_ID,
 			'X-LC-Key': process.env.LEANCLOUD_APP_KEY
 		};
 
-        var postReq = https.request(postOption, function(postRes) {
-            postRes.on('data', function(data) {
+    var postReq = https.request(postOption, function(postRes) {
+      postRes.on('data', function(data) {
 				var resObj = JSON.parse(data.toString());
 				var sessionToken = resObj.sessionToken || '';
 				if (sessionToken.length > 0) {
@@ -60,7 +139,7 @@ router.post('/verifySmsCode', function(req, res, next) {
 							res.send({ status: 'error', code: 0, message: '会话失败' });
 						} else {
 							req.session.userId = resObj.objectId;
-							req.session.mobilePhone = mobilePhone;	
+							req.session.mobilePhone = mobilePhone;
 							var user = AV.Object.createWithoutData('_User', resObj.objectId);
 							user.fetch().then(function(user) {
 								req.session.username = user.get('username');
@@ -71,7 +150,7 @@ router.post('/verifySmsCode', function(req, res, next) {
 									extra.set('name', '');
 									extra.set('birthday', new Date('1901-01-01'));
 									extra.set('gender', 0);
-									extra.set('schoolName', '');							
+									extra.set('schoolName', '');
 									extra.save().then(function(extra) {
 										user.set('extraInfo', extra);
 										user.save();
@@ -94,9 +173,10 @@ router.post('/verifySmsCode', function(req, res, next) {
 			res.send({ status: 'fail', code: -1, message: '通讯失败' });
 		});
 
-		var reqData = '{"mobilePhoneNumber":"' + mobilePhone + '","smsCode":"' + smsCode + '"}';
-
-		postReq.write(reqData);
+		postReq.write(JSON.stringify({
+			mobilePhoneNumber: mobilePhone,
+			smsCode: smsCode
+		}));
 		postReq.end();
 	}
 });
