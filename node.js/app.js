@@ -80,6 +80,7 @@ app.get('/logout', function(req, res) {
 });
 
 // 可以将一类的路由单独保存在一个文件中
+app.use('/captchaCode', require('./routes/captchaCode'));
 app.use('/login', require('./routes/login'));
 app.use('/register', require('./routes/register'));
 app.use('/personalCenter', require('./routes/personalCenter'));

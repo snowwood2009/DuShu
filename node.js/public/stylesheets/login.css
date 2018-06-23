@@ -1,3 +1,28 @@
+.login-type {
+	border: solid 1px #48bf48;
+	height: 30px;
+	width: 300px;
+	margin: 0 auto;
+}
+
+.login-type-item {
+	width: 50%;
+	height: 100%;
+	float: left;
+	line-height: 30px;
+	text-align: center;
+}
+
+#usePwd {
+	background-color: #48bf48;
+	color: white;
+}
+
+#usePhone {
+	background-color: white;
+	color: black;
+}
+
 #divPwd {
 }
 

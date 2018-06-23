@@ -1,7 +1,7 @@
 function requestCaptchaCode() {
 	$.ajax({
 		type: "GET",
-		url: "register/requestCaptchaCode",
+		url: "captchaCode/",
 		success: function(res) {
 			if ('success' == res.status) {
 				$("#captchaImage").attr("src", res.captcha_url);
@@ -30,7 +30,7 @@ function verifyCaptchaCode() {
 	var captchaToken = $("#captchaToken").val();
 	$.ajax({
 		type: "POST",
-		url: "register/verifyCaptchaCode",
+		url: "captchaCode/verifyCaptchaCode",
 		data: {
 			captchaCode: captchaCode,
 			captchaToken: captchaToken,
@@ -40,6 +40,7 @@ function verifyCaptchaCode() {
 			if ('success' == res.status) {
 			} else {
 				alert(res.message);
+				requestCaptchaCode();
 			}
 		},
 		error: function(err) {
