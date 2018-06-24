@@ -64,7 +64,7 @@ router.post('/loginWithPhone', function(req, res, next) {
 							req.session.userId = results[0].id;
 							req.session.username = results[0].attributes.username;
 							req.session.mobilePhone = mobilePhone;
-							res.send({ status: 'success', message: '登录成功。' });
+							res.send({ status: 'success', message: '登录成功。', username: req.session.username });
 						}
 					}, function (error) {
 						console.log('A14');

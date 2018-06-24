@@ -143,11 +143,13 @@ router.post('/username', function(req, res, next) {
 			user.set('username', username);
 			user.set('password', password);
 			user.save().then(function(ret) {
+				req.session.username = username;
 				res.send({ status: 'success', code: 0, message: '提交完成。' });
 			}, function(err) {
-				console.log('c4');
-				console.log(err);
-				res.send({ status: 'fail', code: -5, message: '提交失败。' });
+				if (err.code == 202)
+					res.send({ status: 'fail', code: -5, message: '用户名' + username + '已被占用，请使用其它用户名。' });
+				else
+					res.send({ status: 'fail', code: -5, message: '提交失败。' });
 			});
 		}, function(err) {
 			console.error('c2');

@@ -91,7 +91,11 @@ function onPhoneLogin() {
 			data: {	mobilePhone: mobilePhone, smsCode: smsCode },
 			success: function(res) {
 				if (res.status == 'success') {
-					$(location).attr('href', '/');
+					var username = res.username || '';
+					if (username.length > 0)
+						$(location).attr('href', '/');
+					else
+						$(location).attr('href', '/register/username');
 				} else {
 					alert(res.message);
 				}
