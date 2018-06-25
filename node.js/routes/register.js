@@ -66,7 +66,7 @@ router.post('/verifySmsCode', function(req, res, next) {
 							req.session.mobilePhone = mobilePhone;
 							var user = AV.Object.createWithoutData('_User', resObj.objectId);
 							user.fetch().then(function(user) {
-								req.session.username = user.get('username');
+								req.session.username = user.get('displayUsername');
 								var extraInfo = user.get('extraInfo');
 								if (!extraInfo) {
 									var UserExtra = AV.Object.extend('UserExtra');
@@ -132,31 +132,40 @@ router.get('/username', function(req, res, next) {
 router.post('/username', function(req, res, next) {
 	var username = req.body.username || '';
 	var password = req.body.password || '';
-	//注意：这里还要判断用户名是否符合格式要求，例如必须以字母开头。
 	if (username.length <= 0) {
 		res.send({ status: 'error', code: -1, message: '用户名不能为空。' });
-	} if (password.length <= 0) {
-		res.send({ status: 'error', code: -3, message: '密码不能为空。' });
-	} else {
-		var user = AV.Object.createWithoutData('_User', req.session.userId);
-		user.fetch().then(function() {
-			user.set('username', username);
-			user.set('password', password);
-			user.save().then(function(ret) {
-				req.session.username = username;
-				res.send({ status: 'success', code: 0, message: '提交完成。' });
-			}, function(err) {
-				if (err.code == 202)
-					res.send({ status: 'fail', code: -5, message: '用户名' + username + '已被占用，请使用其它用户名。' });
-				else
-					res.send({ status: 'fail', code: -5, message: '提交失败。' });
-			});
-		}, function(err) {
-			console.error('c2');
-			console.error(err);
-			res.send({ status: 'fail', code: -5, message: '没有找到用户。' });
-		});
+		return;
 	}
+	var pattern = /^[a-z,A-Z][a-z,A-Z,0-9]{2,19}$/;
+	var matchResult = username.match(pattern) || '';
+	if (matchResult.length <= 0) {
+		res.send({ status: 'error', code: -3, message: '用户名格式错误。' });
+		return;
+	}
+	if (password.length <= 0) {
+		res.send({ status: 'error', code: -3, message: '密码不能为空。' });
+		return;
+	}
+
+	var user = AV.Object.createWithoutData('_User', req.session.userId);
+	user.fetch().then(function() {
+		user.set('displayUsername', username);
+		user.set('username', username.toLowerCase());
+		user.set('password', password);
+		user.save().then(function(ret) {
+			req.session.username = username;
+			res.send({ status: 'success', code: 0, message: '提交完成。' });
+		}, function(err) {
+			if (err.code == 202)
+				res.send({ status: 'fail', code: -5, message: '用户名' + username + '已被占用，请使用其它用户名。' });
+			else
+				res.send({ status: 'fail', code: -5, message: '提交失败。' });
+		});
+	}, function(err) {
+		console.error('c2');
+		console.error(err);
+		res.send({ status: 'fail', code: -5, message: '没有找到用户。' });
+	});
 });
 
 module.exports = router;

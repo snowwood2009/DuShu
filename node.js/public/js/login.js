@@ -66,6 +66,7 @@ function verifyCaptchaCode() {
 		},
 		success: function(res) {
 			if ('success' == res.status) {
+				alert("验证码已发送，请注意查收。");
 			} else {
 				alert(res.message);
 				requestCaptchaCode();

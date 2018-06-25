@@ -19,25 +19,28 @@ router.post('/loginWithPwd', function(req, res, next) {
 	var username = req.body.username || '';
 	var password = req.body.password || '';
 	if (username.length <= 0 || password <= 0) {
-		console.log("B3");
-		res.send({ status: 'fail', message: '用户名或密码错误。' });
+		res.send({ status: 'fail', message: '用户名和密码不能为空。' });
 		return;
 	}
-	AV.User.logIn(username, password).then(function (loggedInUser) {
+	AV.User.logIn(username.toLowerCase(), password).then(function (loggedInUser) {
 		req.session.regenerate(function(err) {
 			if (err) {
+				console.log("***************B4");
 				console.error(err);
 				res.send({ status: 'error', message: '登录失败' });
 			} else {
+				console.log(loggedInUser);
 				req.session.userId = loggedInUser.id;
-				req.session.username = username;
+				req.session.username = loggedInUser.attributes.displayUsername;
 				req.session.mobilePhone = loggedInUser.mobilePhone || '';
 				res.send({ status: 'success', message: '登录成功。' });
 			}
 		});
 	}, function (err) {
-		console.error(err);
-		res.send({ status: 'fail', message: '用户名或密码错误。' });
+		if (err.code == 211)
+			res.send({ status: 'fail', message: '用户名或密码错误。' });
+		else
+			res.send({ status: 'fail', message: err.rawMessage });
 	});
 });
 
@@ -62,7 +65,7 @@ router.post('/loginWithPhone', function(req, res, next) {
 							res.send({ status: 'fail', message: '此手机号未注册。' });
 						} else {
 							req.session.userId = results[0].id;
-							req.session.username = results[0].attributes.username;
+							req.session.username = results[0].attributes.displayUsername;
 							req.session.mobilePhone = mobilePhone;
 							res.send({ status: 'success', message: '登录成功。', username: req.session.username });
 						}

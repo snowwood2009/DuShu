@@ -15,33 +15,38 @@
 					<div class='login-type-item' id="usePhone">手机登录</div>
 				</div>
 				<div id="divPwd">
-					<div>
-						<span>用户名</span>
-						<input type='text' id='username' />
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">用户名：</div>
+						<div class="ds-table-column ds-row-value"><input type='text' id='username' /></div>
 					</div>
-					<div>
-						<span>密码</span>
-						<input type='password' id='password' />
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">密　码：</div>
+						<div class="ds-table-column ds-row-value"><input type='password' id='password' /></div>
 					</div>
-					<div>
-						<input type="button" id="btnPwdLogin" value="登录" />
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">　</div>
+						<div class="ds-table-column ds-row-value"><div href="#" class="ds-button1" id="btnPwdLogin">登录</div></div>
 					</div>
 				</div>
 				<div id="divPhone">
-					<div>
-						<span>校验码：</span><input type="text" id="captchaCode" />
-						<img id="captchaImage" />
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">校验码：</div>
+						<div class="ds-table-column ds-row-value1"><input type="text" id="captchaCode" /></div>
+						<div class="ds-table-column ds-row-value2"><img id="captchaImage" /></div>
 						<input type="hidden" id="captchaToken" />
 					</div>
-					<div>
-						<span>手机号：</span>
-						<input type="text" id="mobilePhone" value="15038112277" />
-						<input type="button" id="requestSmsCode" value="获取验证码" />
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">手机号：</div>
+						<div class="ds-table-column ds-row-value1"><input type="text" id="mobilePhone" value="15038112277" /></div>
+						<div class="ds-table-column ds-row-value2"><a href="#" id="requestSmsCode">获取验证码</a></div>
 					</div>
-					<div>
-						<span>验证码：</span>
-						<input type="text" id="smsCode" value="903756" />
-						<input type="button" id="btnPhoneLogin" value="登录" />
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">验证码：</div>
+						<div class="ds-table-column ds-row-value"><input type="text" id="smsCode" value="903756" /></div>
+					</div>
+					<div class="ds-table-row">
+						<div class="ds-table-column ds-row-title">　</div>
+						<div class="ds-table-column ds-row-value"><div class="ds-button1" id="btnPhoneLogin">登录</div></div>
 					</div>
 				</div>
 			</div>
