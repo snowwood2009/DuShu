@@ -68,7 +68,9 @@ router.post('/verifySmsCode', function(req, res, next) {
 							user.fetch().then(function(user) {
 								req.session.username = user.get('displayUsername');
 								var extraInfo = user.get('extraInfo');
-								if (!extraInfo) {
+								if (extraInfo != null) {
+									res.send({ status: 'success', code: 0, message: '验证成功' });
+								} else {
 									var UserExtra = AV.Object.extend('UserExtra');
 									var extra = new UserExtra();
 									extra.set('name', '');
@@ -78,13 +80,19 @@ router.post('/verifySmsCode', function(req, res, next) {
 									extra.save().then(function(extra) {
 										user.set('extraInfo', extra);
 										user.save();
+										req.session.extraInfo = extra.attributes;
+										console.log(req.session.extraInfo);
+										res.send({ status: 'success', code: 0, message: '注册成功' });
+									}, function(err) {
+										console.log("H5");
+										console.error(err);
+										res.send({ status: 'success', code: 0, message: '注册用户信息失败' });
 									});
 								}
-								res.send({ status: 'success', code: 0, message: '验证成功' });
 							}, function(err) {
-								console.log("H5");
+								console.log("H6");
 								console.error(err);
-								res.send({ status: 'success', code: 0, message: '验证成功' });
+								res.send({ status: 'success', code: 0, message: '注册失败' });
 							});
 						}
 					});

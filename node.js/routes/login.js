@@ -15,6 +15,21 @@ router.get('/', function(req, res, next) {
 	res.render('login');
 });
 
+function loadExtraAndResponse(req, res, extraInfo, username)
+{
+	if (extraInfo != null && extraInfo.id != null) {
+		var query = new AV.Query('UserExtra');
+		query.get(extraInfo.id).then(function (extraInfo) {
+			req.session.extraInfo = extraInfo.attributes;
+			res.send({ status: 'success', message: '登录成功。', username: username });
+		}, function (err) {
+			res.send({ status: 'success', message: '登录成功。', username: username });
+		});
+	} else {
+		res.send({ status: 'success', message: '登录成功。', username: username });
+	}
+}
+
 router.post('/loginWithPwd', function(req, res, next) {
 	var username = req.body.username || '';
 	var password = req.body.password || '';
@@ -32,8 +47,8 @@ router.post('/loginWithPwd', function(req, res, next) {
 				console.log(loggedInUser);
 				req.session.userId = loggedInUser.id;
 				req.session.username = loggedInUser.attributes.displayUsername;
-				req.session.mobilePhone = loggedInUser.mobilePhone || '';
-				res.send({ status: 'success', message: '登录成功。' });
+				req.session.mobilePhone = loggedInUser.attributes.mobilePhoneNumber || '';
+				loadExtraAndResponse(req, res, loggedInUser.attributes.extraInfo);
 			}
 		});
 	}, function (err) {
@@ -67,7 +82,9 @@ router.post('/loginWithPhone', function(req, res, next) {
 							req.session.userId = results[0].id;
 							req.session.username = results[0].attributes.displayUsername;
 							req.session.mobilePhone = mobilePhone;
-							res.send({ status: 'success', message: '登录成功。', username: req.session.username });
+							loadExtraAndResponse(req, res,
+									results[0].attributes.extraInfo,
+									req.session.username);
 						}
 					}, function (error) {
 						console.log('A14');
